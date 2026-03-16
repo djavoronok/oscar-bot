@@ -502,6 +502,55 @@ async def show_results(update, ctx):
         f"*ПОБЕДИТЕЛИ · OSCAR 2026*\n\n" + f"\n{DIVIDER}\n".join(lines),
         parse_mode="Markdown")
 
+
+async def my_results(update, ctx):
+    uid     = str(update.effective_user.id)
+    entry   = load(DATA_FILE).get(uid)
+    results = load(RESULTS_FILE)
+
+    if not entry:
+        await update.message.reply_text("Вы не участвовали в голосовании.")
+        return
+    if not results:
+        await update.message.reply_text(
+            "*OSCAR 2026*\n\nПобедители ещё не объявлены.",
+            parse_mode="Markdown")
+        return
+
+    preds  = entry.get("predictions", {})
+    wishes = entry.get("wishes", {})
+    lines  = []
+    correct = 0
+
+    for cat in CATEGORIES:
+        winner = results.get(cat["id"])
+        if not winner:
+            continue
+        my_pred = preds.get(cat["id"], "—")
+        my_wish = wishes.get(cat["id"], "—")
+        hit = my_pred.strip().lower() == winner.strip().lower()
+        if hit:
+            correct += 1
+        mark = "✓" if hit else "✗"
+        wish_line = f"  ✦  Хотел(а): `{my_wish}`" if my_wish != my_pred else ""
+        block = (
+            f"*{cat['title'].upper()}*\n"
+            f"  {mark}  Мой прогноз: `{my_pred}`\n"
+            f"  \u2605  Победитель: `{winner}`"
+        )
+        if wish_line:
+            block += "\n" + wish_line
+        lines.append(block)
+
+    total = len(results)
+    pct   = round(100 * correct / total) if total else 0
+    await update.message.reply_text(
+        f"*МОИ РЕЗУЛЬТАТЫ · OSCAR 2026*\n\n" +
+        f"\n{DIVIDER}\n".join(lines) +
+        f"\n\n{DIVIDER}\n\n"
+        f"Угадано: *{correct} / {total}* ({pct}%)",
+        parse_mode="Markdown")
+
 async def post_init(app):
     """Регистрируем команды — они появятся в меню '/'."""
     await app.bot.set_my_commands([
@@ -509,6 +558,7 @@ async def post_init(app):
         BotCommand("my_votes",    "Мои прогнозы"),
         BotCommand("leaderboard", "Таблица лидеров"),
         BotCommand("stats",       "Статистика голосования"),
+        BotCommand("my_results",  "Мои результаты vs победители"),
         BotCommand("results",     "Победители церемонии"),
     ])
 
@@ -559,6 +609,7 @@ def main():
     app.add_handler(CommandHandler("stats",        stats))
     app.add_handler(CommandHandler("set_deadline", set_deadline))
     app.add_handler(CommandHandler("results",      show_results))
+    app.add_handler(CommandHandler("my_results",   my_results))
 
     logger.info("Oscar Bot · запущен")
     app.run_polling(drop_pending_updates=True)
