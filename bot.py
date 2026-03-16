@@ -551,6 +551,19 @@ async def my_results(update, ctx):
         f"Угадано: *{correct} / {total}* ({pct}%)",
         parse_mode="Markdown")
 
+async def help_command(update, ctx):
+    text = (
+        "*КОМАНДЫ БОТА*\n\n"
+        "/start — Участвовать в голосовании\n"
+        "/my\\_votes — Мои прогнозы\n"
+        "/leaderboard — Таблица лидеров\n"
+        "/stats — Статистика голосования\n"
+        "/results — Победители церемонии\n"
+        "/my\\_results — Мои результаты vs победители\n"
+        "/help — Список команд"
+    )
+    await update.message.reply_text(text, parse_mode="Markdown")
+
 async def post_init(app):
     """Регистрируем команды — они появятся в меню '/'."""
     await app.bot.set_my_commands([
@@ -560,6 +573,7 @@ async def post_init(app):
         BotCommand("stats",       "Статистика голосования"),
         BotCommand("my_results",  "Мои результаты vs победители"),
         BotCommand("results",     "Победители церемонии"),
+        BotCommand("help",        "Список команд"),
     ])
 
 def main():
@@ -610,6 +624,7 @@ def main():
     app.add_handler(CommandHandler("set_deadline", set_deadline))
     app.add_handler(CommandHandler("results",      show_results))
     app.add_handler(CommandHandler("my_results",   my_results))
+    app.add_handler(CommandHandler("help",         help_command))
 
     logger.info("Oscar Bot · запущен")
     app.run_polling(drop_pending_updates=True)
