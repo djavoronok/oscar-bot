@@ -485,6 +485,23 @@ async def set_deadline(update, ctx):
 
 # ── ЗАПУСК ────────────────────────────────────────────────────────────────────
 
+
+async def show_results(update, ctx):
+    results = load(RESULTS_FILE)
+    if not results:
+        await update.message.reply_text(
+            "*OSCAR 2026*\n\nПобедители ещё не объявлены.\nПриходите после 15 марта.",
+            parse_mode="Markdown")
+        return
+    lines = []
+    for cat in CATEGORIES:
+        winner = results.get(cat["id"])
+        if winner:
+            lines.append(f"*{cat['title'].upper()}*\n  ★  `{winner}`")
+    await update.message.reply_text(
+        f"*ПОБЕДИТЕЛИ · OSCAR 2026*\n\n" + f"\n{DIVIDER}\n".join(lines),
+        parse_mode="Markdown")
+
 async def post_init(app):
     """Регистрируем команды — они появятся в меню '/'."""
     await app.bot.set_my_commands([
@@ -492,6 +509,7 @@ async def post_init(app):
         BotCommand("my_votes",    "Мои прогнозы"),
         BotCommand("leaderboard", "Таблица лидеров"),
         BotCommand("stats",       "Статистика голосования"),
+        BotCommand("results",     "Победители церемонии"),
     ])
 
 def main():
@@ -540,6 +558,7 @@ def main():
     app.add_handler(CommandHandler("leaderboard",  leaderboard))
     app.add_handler(CommandHandler("stats",        stats))
     app.add_handler(CommandHandler("set_deadline", set_deadline))
+    app.add_handler(CommandHandler("results",      show_results))
 
     logger.info("Oscar Bot · запущен")
     app.run_polling(drop_pending_updates=True)
